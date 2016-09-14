@@ -1,0 +1,199 @@
+/*
+trees.cpp
+Jul 18, 2016
+KST
+*/
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+using namespace std;
+
+class attributeValue {
+public:
+	vector<string> attributes;
+	int count;
+};
+
+class Node {
+public:
+	vector<int> values, counts;
+	vector<Node*> pointers;
+	~Node() {
+		for (size_t i = 0; i < this->pointers.size(); ++i) {
+			delete this->pointers[i];
+		}
+	}
+};
+
+void addToTree(Node *treeRoot, vector<int> row) {
+	Node *curNode = treeRoot;
+	int noAttributes = row.size() - 1;
+	for (int k = 0; k < noAttributes; ++k) {
+		int curAttrValue = row[k];
+		int curAttrIndex = -1;
+		for (size_t j = 0; j < curNode->values.size(); ++j)
+			if (curNode->values[j] == curAttrValue) {
+				curAttrIndex = j;
+				break;
+			}
+		if (curAttrIndex == -1) {
+			curNode->values.push_back(curAttrValue);
+			curNode->counts.push_back(0);
+			if (k < noAttributes - 1) {
+				Node *newNode = new Node();
+				curNode->pointers.push_back(newNode);
+			}
+
+			curAttrIndex = curNode->values.size() - 1;
+		}
+
+		curNode->counts[curAttrIndex] += row[noAttributes];
+
+		if (k < noAttributes - 1)
+			curNode = curNode->pointers[curAttrIndex];
+	}
+}
+
+int countTree(Node *curNode, int nodeLevel, vector<int> attrs) {
+	int sum = 0;
+
+	if (attrs[nodeLevel] == -1) {
+		if (curNode->pointers.empty())
+			for (size_t i = 0; i < curNode->counts.size(); ++i)
+				sum += curNode->counts[i];
+		else
+			for (size_t i = 0; i < curNode->pointers.size(); ++i)
+				sum += countTree(curNode->pointers[i], nodeLevel + 1, attrs);
+	}
+	else {
+		int curAttrIndex = -1;
+		for (size_t i = 0; i < curNode->values.size(); ++i)
+			if (curNode->values[i] == attrs[nodeLevel]) {
+				curAttrIndex = i;
+				break;
+			}
+		if (curNode->pointers.empty())
+			sum = curNode->counts[curAttrIndex];
+		else
+			sum = countTree(curNode->pointers[curAttrIndex], nodeLevel + 1, attrs);
+	}
+
+	return sum;
+}
+
+int main() {
+	ifstream in("inputP2.txt");
+	int noAttributes, noRows;
+	in >> noAttributes >> noRows;
+	string tempStr;
+	getline(in, tempStr); // Reading the empty line
+	attributeValue *objects = new attributeValue[noRows];
+	for (int i = 0; i < noRows; ++i) {
+		objects[i].attributes = vector<string>(noAttributes);
+		for (int k = 0; k < noAttributes; ++k)
+			in >> objects[i].attributes[k];
+		in >> objects[i].count;
+		getline(in, tempStr); // Reading the empty line
+	}
+
+	vector<string> *uniqueAttrValues = new vector<string>[noAttributes];
+	for (int i = 0; i < noRows; ++i) {
+		for (int k = 0; k < noAttributes; ++k) {
+			// If current attribute value is not in array - add it
+			bool attrFound = false;
+			for (size_t j = 0; j < uniqueAttrValues[k].size(); ++j) {
+				if (uniqueAttrValues[k][j] == objects[i].attributes[k]) {
+					attrFound = true;
+					break;
+				}
+			}
+			if (!attrFound)
+				uniqueAttrValues[k].push_back(objects[i].attributes[k]);
+		}
+	}
+
+	int **tableValues = new int*[noRows];
+	for (int i = 0; i < noRows; ++i) {
+		tableValues[i] = new int[noAttributes + 1];
+		for (int k = 0; k < noAttributes; ++k) {
+			string attr = objects[i].attributes[k];
+			int index = -1;
+
+			// Finding the index of the current attribute
+			for (size_t j = 0; j < uniqueAttrValues[k].size(); ++j) {
+				if (uniqueAttrValues[k][j] == attr) {
+					index = j;
+					break;
+				}
+			}
+			tableValues[i][k] = index;
+		}
+		tableValues[i][noAttributes] = objects[i].count;
+	}
+
+	Node *treeRoot = new Node();
+
+	for (int i = 0; i < noRows; ++i) {
+		vector<int> row(noAttributes + 1);
+		for (int k = 0; k <= noAttributes; ++k) {
+			row[k] = tableValues[i][k];
+		}
+		addToTree(treeRoot, row);
+	}
+
+	int numOfTests;
+	in >> numOfTests;
+	for (int i = 0; i < numOfTests; ++i) {
+		getline(in, tempStr);
+		string cmd;
+		in >> cmd;
+		vector<int> attrs;
+		for (int k = 0; k < noAttributes; ++k) {
+			string attr;
+			in >> attr;
+			if (attr == "*")
+				attrs.push_back(-1);
+			else {
+				bool attrFound = false;
+				for (size_t j = 0; j < uniqueAttrValues[k].size(); ++j)
+					if (uniqueAttrValues[k][j] == attr) {
+						attrs.push_back(j);
+						attrFound = true;
+						break;
+					}
+				if (cmd == "I" && !attrFound) {
+					uniqueAttrValues[k].push_back(attr);
+					attrs.push_back(uniqueAttrValues[k].size() -1);
+				}
+			}
+
+		}
+		if (cmd == "F")
+			cout << countTree(treeRoot, 0, attrs) << endl;
+		else if (cmd == "I") {
+			int count;
+			in >> count;
+			attrs.push_back(count);
+			addToTree(treeRoot, attrs);
+			cout << "Entry added" << endl;
+		}
+	}
+
+	in.close();
+
+	delete treeRoot;
+	for (int i = 0; i < noRows; ++i) {
+		delete[] tableValues[i];
+	}
+	delete[] tableValues;
+	delete[] objects;
+	delete[] uniqueAttrValues;
+}
+
+/*output:
+380
+70
+30
+80*/
+// output is as per the examples in the project description
