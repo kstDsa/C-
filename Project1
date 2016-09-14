@@ -1,0 +1,205 @@
+#include <iostream>          //Defining the header files
+#include <fstream>
+#include <string>
+
+using namespace std;
+
+class Product {               //Defining the product class
+public:
+	string ID;
+	string category;
+	string condition;
+};
+
+
+//Inheriting from the product class
+class Item :public Product {      //Defining the item class
+public:
+	string title;
+	string availability;
+	string color;
+	double price;
+	      
+};
+
+
+
+int main(int argc, char *argv[])
+{
+	string line;
+	int i = 0, j = 0, size = 0, n=0, u=0, r=0, used_max_index=0, new_max_index = 0, ref_max_index = 0;
+	double max_used = 0, max_new = 0, max_ref = 0, min_used = 0, min_new = 0, min_ref = 0;
+	int used_min_index = 0, new_min_index = 0, ref_min_index = 0;
+	double tot_price = 0, avg_price = 0;
+	Item* MyItems = new Item[1000];  // MyItems is pointing to an array of item pointers
+
+	if (argc != 1) // argc should be 1 to read the file
+				   // We print argv[0] assuming it is the program name
+		cout << "usage: " << argv[0] << " <filename>\n";
+	else {
+		// We assume argv[1] is a filename to open
+		ifstream myFile("Text.txt");
+		// Always check to see if file opening succeeded
+		if (!myFile.is_open())
+			cout << "Could not open file\n";
+		else {
+			Item* anItem = new Item();
+
+			while (getline(myFile, line))
+			{
+
+				if (i == 0)
+				{
+					anItem->ID = line;
+					MyItems[j] = *anItem;
+					i++;
+				}
+				else if (i == 1)
+				{
+					anItem->category = line;
+					MyItems[j] = *anItem;
+					i++;
+
+				}
+				else if (i == 2)
+				{
+					anItem->condition = line;
+					MyItems[j] = *anItem;
+					i++;
+
+				}
+				else if (i == 3)
+				{
+					anItem->title = line;
+					MyItems[j] = *anItem;
+					i++;
+
+				}
+				else if (i == 4)
+				{
+					anItem->availability = line;
+					MyItems[j] = *anItem;
+					i++;
+
+				}
+				else if (i == 5)
+				{
+					anItem->color = line;
+					MyItems[j] = *anItem;
+					i++;
+
+				}
+				else if (i == 6)
+				{
+					string price = line;
+					anItem->price = atof(price.c_str());
+					MyItems[j] = *anItem;
+					i++;
+
+				}
+				else if (i == 7 && line == "**")
+				{
+					i = 0;
+					j++;
+					getline(myFile, line);
+
+				}
+
+				//cout << '\t';
+			}
+
+			/* Finding out the no of items in each condition type */
+
+			size = j + 1;   // Total no of products
+		   for (int p = 0; p < size; p++) {
+			   if (MyItems[p].condition == "used") {
+				   u++;
+			       }
+
+			   else if (MyItems[p].condition == "new") {
+				   n++;
+			       }  
+			   else if (MyItems[p].condition == "refurbished") {
+				   r++;
+			   }
+            
+			}
+
+		   /* For finding out the maximum price of different condition types(new, used, refurbished.) */
+
+		   for (int k = 0; k < size; k++) {
+			   if (MyItems[k].condition == "used") {
+				   if (max_used < MyItems[k].price) {
+					   used_max_index = k;
+					   max_used = MyItems[k].price;
+				   }
+			   }
+			   else if (MyItems[k].condition == "new") {
+				   if (max_new < MyItems[k].price) {
+					   new_max_index = k;
+					   max_new = MyItems[k].price;
+				   }
+			   }
+			   else if (MyItems[k].condition == "refurbished") {
+				   if (max_ref < MyItems[k].price) {
+					   ref_max_index = k;
+					   max_ref = MyItems[k].price;
+				   }
+			   }
+		   
+		   }
+
+		   /* For finding out the minimum price of different condition types(new, used, refurbished.) */
+
+		   min_used = max_used;
+		   used_min_index = -1;
+		   min_new = max_new;
+		   new_min_index = -1;
+		   min_ref = max_new;
+		   ref_min_index = -1;
+		   for (int k = 0; k < size; k++) {
+			   if (MyItems[k].condition == "used") {
+				   if (min_used > MyItems[k].price) {
+					   used_min_index = k;
+					   min_used = MyItems[k].price;
+				   }
+			   }
+			   else if (MyItems[k].condition == "new") {
+				   if (min_new > MyItems[k].price) {
+					   new_min_index = k;
+					   min_new = MyItems[k].price;
+				   }
+			   }
+			   else if (MyItems[k].condition == "refurbished") {
+				   if (min_ref > MyItems[k].price) {
+					   ref_min_index = k;
+					   min_ref = MyItems[k].price;
+				   }
+			   }
+
+		   }
+
+		   /* For finding out the average price of all the products */
+
+		   for (int k = 0; k < size; k++) {
+			   tot_price+= MyItems[k].price;
+			   avg_price = tot_price / size;
+               }
+
+		   myFile.close();
+			cout << '\n' << "Total no of items= " << size;
+			cout << '\n' << "Total no of used items= " << u;
+			cout << '\n' << "Total no of new items= " << n;
+			cout << '\n' << "Total no of refurbished items= " << r;
+			cout << '\n' << "Max price of used condition type= " << max_used << " and is of "<< MyItems[used_max_index].title;
+			cout << '\n' << "Max price of used condition type= " << max_new << " and is of " << MyItems[new_max_index].title;
+			cout << '\n' << "Max price of used condition type= " << max_ref << " and is of " << MyItems[ref_max_index].title;
+			cout << '\n' << "Min price of used condition type= " << min_used << " and is of " << MyItems[used_min_index].title;
+			cout << '\n' << "Min price of used condition type= " << min_new << " and is of " << MyItems[new_min_index].title;
+			cout << '\n' << "Min price of used condition type= " << min_ref << " and is of " << MyItems[ref_min_index].title;
+			cout << '\n' << "Total price of all the items in the given " << tot_price;
+			cout << '\n' << "Total price of all the items in the given " << avg_price;
+ 		}
+		cin.get();
+	}
+}
